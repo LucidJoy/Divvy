@@ -1,25 +1,73 @@
-import Script from "next/script";
-import { ThemeProvider } from "next-themes";
+import "../styles/app.sass";
 
-import { Navbar, Footer } from "../components";
-import "../styles/globals.css";
+import { CreateLendProvider } from "../context/LendContext";
 
-import { DivvyProvider } from "../context/DivvyContext";
+import { publicProvider } from "wagmi/providers/public";
+import { WagmiConfig, createConfig, configureChains } from "wagmi";
 
-function MyApp({ Component, pageProps }) {
+// import { filecoinHyperspace, mainnet } from "@wagmi/core/chains";
+import { sepolia, xdcTestnet } from "wagmi/chains";
+import { alchemyProvider } from "@wagmi/core/providers/alchemy";
+import { jsonRpcProvider } from "wagmi/providers/jsonRpc";
+
+import { MetaMaskConnector } from "wagmi/connectors/metaMask";
+// import { CoinbaseWalletConnector } from "wagmi/connectors/coinbaseWallet";
+// import { WalletConnectConnector } from "wagmi/connectors/walletConnect";
+// import { jsonRpcProvider } from "wagmi/providers/jsonRpc";
+import {
+  ConnectKitProvider,
+  ConnectKitButton,
+  getDefaultClient,
+} from "connectkit";
+import { useEffect } from "react";
+
+const { chains, provider, publicClient, webSocketPublicClient } =
+  configureChains(
+    [xdcTestnet],
+    [
+      jsonRpcProvider({
+        rpc: (chain) => ({
+          http: `https://rpc.apothem.network`,
+        }),
+      }),
+    ]
+  );
+
+const config = createConfig({
+  autoConnect: true,
+  connectors: [new MetaMaskConnector({ chains })],
+  publicClient,
+  webSocketPublicClient,
+});
+
+// const client = createClient({
+//   autoConnect: true,
+//   connectors: [
+//     new MetaMaskConnector({ chains }),
+//     new CoinbaseWalletConnector({
+//       chains,
+//       options: {
+//         appName: "NftLend",
+//       },
+//     }),
+//     new WalletConnectConnector({
+//       chains,
+//       options: {
+//         qrcode: true,
+//       },
+//     }),
+//   ],
+//   provider,
+// });
+
+export default function App({ Component, pageProps }) {
   return (
-    <DivvyProvider>
-      <ThemeProvider attribute='class'>
-        <div className='dark:bg-nft-dark bg-white min-h-screen'>
-          <Navbar />
-          <div className='pt-65'>
-            <Component {...pageProps} />
-          </div>
-          <Footer />
-        </div>
-      </ThemeProvider>
-    </DivvyProvider>
+    <CreateLendProvider>
+      <WagmiConfig config={config}>
+        <ConnectKitProvider>
+          <Component {...pageProps} />
+        </ConnectKitProvider>
+      </WagmiConfig>
+    </CreateLendProvider>
   );
 }
-
-export default MyApp;
